@@ -473,7 +473,8 @@ should be done through this fn in order to get global config and config defaults
    "MMM do, yyyy"))
 
 (defn custom-shortcuts []
-  (merge (storage/get :ls-shortcuts)
+  (merge (try (storage/get :ls-shortcuts)
+              (catch :default _ nil))
          (:shortcuts (get-config))))
 
 (defn get-commands
@@ -1114,7 +1115,6 @@ Similar to re-frame subscriptions"
   []
   (when (empty? (:sidebar/blocks @state))
     (sidebar-add-block! (get-current-repo) "contents" :contents)))
-
 
 (defn open-right-sidebar!
   []
