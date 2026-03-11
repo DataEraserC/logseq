@@ -4,6 +4,4 @@
     <string name="title_activity_main">Logseq</string>
     <string name="package_name">com.logseq.app</string>
     <string name="custom_url_scheme">com.logseq.app</string>
-    <string name="widget_description">Display a Logseq page on your home screen</string>
-    <string name="widget_name">Logseq Page</string>
 </resources>

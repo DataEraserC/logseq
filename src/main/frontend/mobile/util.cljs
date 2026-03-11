@@ -40,9 +40,6 @@
                                        (registerPlugin "NativeSelectionActionBarPlugin")))
 (defonce ios-utils (when (native-ios?) (registerPlugin "Utils")))
 (defonce android-utils (when (native-android?) (registerPlugin "Utils")))
-(defonce page-widget (when (and (native-platform?)
-                                (plugin-available? "PageWidgetPlugin"))
-                      (registerPlugin "PageWidgetPlugin")))
 
 (defonce ios-content-size-listener nil)
 
@@ -183,32 +180,6 @@
   (if (native-platform?)
     (.hideAlert ^js ui-local)
     (p/resolved nil)))
-
-(defn update-page-widget!
-  "Update a page widget with new content.
-   widgetId: the Android widget ID
-   pageName: the name of the Logseq page
-   content: the content to display"
-  [widget-id page-name content]
-  (when page-widget
-    (p/let [result (.updateWidget ^js page-widget (clj->js {:widgetId widget-id
-                                                            :pageName page-name
-                                                            :content content}))]
-      (js->clj result :keywordize-keys true))))
-
-(defn get-active-widgets
-  "Get all active page widget IDs."
-  []
-  (when page-widget
-    (p/let [result (.getActiveWidgets ^js page-widget)]
-      (js->clj result :keywordize-keys true))))
-
-(defn delete-widget
-  "Delete a widget by ID."
-  [widget-id]
-  (when page-widget
-    (p/let [result (.deleteWidget ^js page-widget (clj->js {:widgetId widget-id}))]
-      (js->clj result :keywordize-keys true))))
 
 (def mobile-keyboard-anchor-id "ls-mobile-kb-anchor")
 (defonce *hidden-input-timeout (atom nil))
