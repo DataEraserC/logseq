@@ -39,6 +39,10 @@ on:
         required: true
       SENTRY_AUTH_TOKEN:
         required: true
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
 
 env:
   CLOJURE_VERSION: '1.11.1.1413'
@@ -114,7 +118,7 @@ jobs:
           LOGSEQ_POSTHOG_TOKEN: ${{ secrets.LOGSEQ_POSTHOG_TOKEN }}
 
       - name: Upload Sentry Sourcemaps (beta only)
-        # if: ${{ github.repository == 'logseq/logseq' && (inputs.build-target == 'beta' || github.event.inputs.build-target == 'beta') }}
+        if: ${{ github.repository == 'logseq/logseq' && (inputs.build-target == 'beta' || github.event.inputs.build-target == 'beta') }}
         run: |
           curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION=2.58.4 bash
           release_name="logseq-android@${{ steps.ref.outputs.version }}"
@@ -142,11 +146,30 @@ jobs:
 
       - name: Sign Android APK
         run: |
-          echo ${{ secrets.ANDROID_KEYSTORE }} | base64 -d > keystore.jks
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
-            --ks keystore.jks --ks-pass "pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            --in app/build/outputs/apk/release/app-release-unsigned.apk \
-            --out app-signed.apk
+          # Decode the base64-encoded keystore
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > keystore.jks
+
+          # Initialize argument array
+          ARGS=(
+            sign
+            --ks keystore.jks
+            --ks-pass "pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+          )
+
+          # If alias is provided, add it to arguments
+          if [ -n "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+              ARGS+=(--ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS }}")
+              # If alias password is also provided, add it; otherwise apksigner will default to keystore password
+              if [ -n "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+                  ARGS+=(--key-pass "pass:${{ secrets.ANDROID_KEY_PASSWORD }}")
+              fi
+          fi
+
+          # Specify input and output APK files
+          ARGS+=(--in app/build/outputs/apk/release/app-release-unsigned.apk --out app-signed.apk)
+
+          # Execute apksigner with the constructed arguments
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner "${ARGS[@]}"
         working-directory: android
 
       - name: Rename Apk
